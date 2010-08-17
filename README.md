@@ -12,7 +12,7 @@ basic in memory throttling
       def main(args: Array[String]) {
         unfiltered.server.Http(8080).filter(new curbed.Throttle).filter(unfiltered.Planify {
           case _ => ResponseString("hit me")
-        })
+        }).run
       }
     }
     
@@ -24,7 +24,7 @@ basic in memory throttling with explicit maximum requests
           override def maxRequests = 100
         }).filter(unfiltered.Planify {
           case _ => ResponseString("hit me")
-        })
+        }).run
       }
     }
     
@@ -34,6 +34,6 @@ basic in memory throttling with a daily request window
       def main(args: Array[String]) {
         unfiltered.server.Http(8080).filter(new curbed.Throttle with DailyWindow).filter(unfiltered.Planify {
           case _ => ResponseString("hit me")
-        })
+        }).run
       }
     }
