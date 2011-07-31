@@ -45,28 +45,36 @@ trait DailyWindow extends Window { self: LockSmith =>
   override protected def dateFmt = "yyyy-MM-dd"
 }
 
+trait Blocker {
+  def block(key: String, requestCount: Int): unfiltered.response.ResponseFunction[Any]
+}
+
+object ForbiddenBlocker extends Blocker {
+  def block(key: String, requestCount: Int) = PlainTextContent ~> Forbidden
+}
+
 /** Throttles requests based on windows of time limiting maxRequests requests per client */
-class Throttle extends IpKeyer with HashCache with HourlyWindow with unfiltered.filter.Plan {
+class Throttle(
+  window: Window = new HourlyWindow with IpKeyer,
+  cache: Cache = new HashCache {},
+  maxRequests: Int = 10,
+  blocker: Blocker = ForbiddenBlocker) {
+
   object Throttled {
     def unapply[T](r: HttpRequest[T]) = {
-      val k = fullkey(r)
-      val cnt = get(k) match {
+      val k = window.fullkey(r)
+      val cnt = cache.get(k) match {
         case Some(n) => n + 1
         case _ => 1
       }
-      set(k, cnt)
+      cache.set(k, cnt)
       if(cnt > maxRequests) Some(k, cnt)
       else None
     }
   }
 
-  def intent = {
-    case Throttled(k, n) => block(k, n)
+  def intent[A, B]: unfiltered.Cycle.Intent[A, B] = {
+    case Throttled(k, n) => blocker.block(k, n)
     case _ => Pass
   }
-
-  /** client is allowed maxRequests per window before being blocked */
-  def maxRequests = 10
-
-  def block(k: String, n: Int) = PlainTextContent ~> Forbidden
 }

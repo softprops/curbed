@@ -8,38 +8,49 @@ Install as a filter in an unfiltered pipeline
 
 basic in memory throttling
 
+    import unfiltered.response.ResponseString
+    import curbed._
+
     object Server {
-      def main(args: Array[String]) {
-        unfiltered.server.Http(8080).filter(new curbed.Throttle).filter(unfiltered.Planify {
-          case _ => ResponseString("hit me")
-        }).run
-      }
+       def main(args: Array[String]) {
+         unfiltered.jetty.Http.anylocal
+          .filter(unfiltered.filter.Planify(new Throttle().intent))
+          .filter(unfiltered.filter.Planify {
+            case _ => ResponseString("ah ha")
+          }).run
+       }
     }
 
 basic in memory throttling with explicit maximum requests
 
+    import unfiltered.response.ResponseString
+    import curbed._
+
     object Server {
-      def main(args: Array[String]) {
-        unfiltered.server.Http(8080).filter(new curbed.Throttle {
-          override def maxRequests = 100
-        }).filter(unfiltered.Planify {
-          case _ => ResponseString("hit me")
-        }).run
-      }
+       def main(args: Array[String]) {
+         unfiltered.jetty.Http.anylocal
+          .filter(unfiltered.filter.Planify(new Throttle(maxRequests = 100).intent))
+          .filter(unfiltered.filter.Planify {
+            case _ => ResponseString("ah ha")
+          }).run
+       }
     }
 
 basic in memory throttling with a daily request window
 
+    import unfiltered.response.ResponseString
+    import curbed._
+
     object Server {
       def main(args: Array[String]) {
-        unfiltered.server.Http(8080).filter(new curbed.Throttle with DailyWindow).filter(unfiltered.Planify {
-          case _ => ResponseString("hit me")
-        }).run
+        unfiltered.jetty.Http.anylocal
+          .filter(unfiltered.filter.Planify(new Throttle(window = new DailyWindow with IpKeyer).intent))
+          .filter(unfiltered.filter.Planify {
+            case _ => ResponseString("ah ha")
+          }).run
       }
     }
 
 ## TODO
-
-use plain unfilter.Cycle.Intent[_, _]
 
 Doug Tangren (softprops) 2010-2011
