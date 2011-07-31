@@ -24,11 +24,11 @@ trait LockSmith {
 
 /** makes keys from client ips */
 trait IpKeyer extends LockSmith {
-  def key[T] = _ match { case RemoteAddr(addr, _) => addr }
+  def key[T] = _ match { case RemoteAddr(addr) => addr }
 }
 
 /** responsible making a full key varying depending the size of a time window */
-trait Window { self: LockSmith => 
+trait Window { self: LockSmith =>
   def fullkey[T] = { r: HttpRequest[T] => (self.key(r) :: fmtNow(dateFmt) :: Nil).mkString(":") }
   /** @return a date formate based on the size of the window */
   protected def dateFmt: String
@@ -36,15 +36,14 @@ trait Window { self: LockSmith =>
 }
 
 /** makes keys for hourly windows */
-trait HourlyWindow extends Window { self: LockSmith => 
+trait HourlyWindow extends Window { self: LockSmith =>
   override protected def dateFmt = "yyyy-MM-dd-HH"
 }
 
 /** makes keys for daily windows */
-trait DailyWindow extends Window { self: LockSmith => 
+trait DailyWindow extends Window { self: LockSmith =>
   override protected def dateFmt = "yyyy-MM-dd"
 }
-
 
 /** Throttles requests based on windows of time limiting maxRequests requests per client */
 class Throttle extends IpKeyer with HashCache with HourlyWindow with unfiltered.filter.Plan {
@@ -60,24 +59,14 @@ class Throttle extends IpKeyer with HashCache with HourlyWindow with unfiltered.
       else None
     }
   }
-  
+
   def intent = {
     case Throttled(k, n) => block(k, n)
     case _ => Pass
   }
-  
-  /** client is allowed  maxRequests per window before being blocked */
-  val maxRequests: Int = 10
-  
-  def block(k: String, n: Int) = PlainTextContent ~> Forbidden
-}
 
-object Server {
-  def main(args: Array[String]) {
-    unfiltered.jetty.Http(8080).filter(new Throttle with DailyWindow {
-      override def maxRequests = 20
-    }).filter(unfiltered.filter.Planify {
-     case _ => ResponseString("ah ha") 
-    }).run
-  }
+  /** client is allowed maxRequests per window before being blocked */
+  def maxRequests = 10
+
+  def block(k: String, n: Int) = PlainTextContent ~> Forbidden
 }

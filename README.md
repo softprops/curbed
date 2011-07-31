@@ -1,6 +1,6 @@
 # Curbed
 
-bottle requests with an [unfiltered](http://github.com/n8han/Unfiltered) throttle
+Bottle requests with an [unfiltered](http://github.com/n8han/Unfiltered) throttle
 
 # usage
 
@@ -15,7 +15,7 @@ basic in memory throttling
         }).run
       }
     }
-    
+
 basic in memory throttling with explicit maximum requests
 
     object Server {
@@ -27,7 +27,7 @@ basic in memory throttling with explicit maximum requests
         }).run
       }
     }
-    
+
 basic in memory throttling with a daily request window
 
     object Server {
@@ -37,3 +37,9 @@ basic in memory throttling with a daily request window
         }).run
       }
     }
+
+## TODO
+
+use plain unfilter.Cycle.Intent[_, _]
+
+Doug Tangren (softprops) 2010-2011
